@@ -6,11 +6,15 @@ def vandermondeConversor(x):
     vandermonde_matrix = np.zeros((n, n))
     
     # Llenar la matriz de Vandermonde manualmente
+    
     for i in range(n):
         for j in range(n):
             vandermonde_matrix[i, j] = x[i]**(n-j-1)
     
     return vandermonde_matrix
+
+def polinomio(x,coef):
+    return coef[6]*(x**6)+coef[5]*(x**5)+coef[4]*(x**4)+coef[3]*(x**3)+coef[2]*(x**2)+coef[1]*(x**1)+coef[0]*(x**0)
 
 # Puntos críticos
 distanciaX = np.array([0, 50, 100, 150, 200, 250, 300])
@@ -27,11 +31,13 @@ print("Coeficientes del polinomio:")
 print(coeficientesV)
 
 # Crear un polinomio a partir de los coeficientes
-polinomio = np.poly1d(coeficientesV)
+#polinomio = np.poly1d(coeficientesV)
+
 
 # Crear nuevos puntos para graficar la curva suavizada
 x_new = np.linspace(0, 300, 500)
-y_new = polinomio(x_new)
+
+y_new = polinomio(x_new,coeficientesV)
 
 # Graficar los puntos críticos y la curva interpolada
 plt.plot(x_new, y_new, label='Trayectoria interpolada (Polinomio grado 6)', color='b', linewidth=2)
