@@ -290,7 +290,7 @@ prom_heights = np.mean(heights)
 print(f"Sumatoria promedio de las alturas del mejor individuo: {prom_heights}")
 
 # calcular el promedio de las alturas del spline total
-x_new = np.linspace(0, 300, 1000)  
+x_new = np.linspace(0, 346, 1000)  
 y_spl = cs(x_new)  
 
 # Calcular el promedio de las alturas
@@ -298,13 +298,10 @@ average_height = np.mean(y_spl)
 
 print(f"El promedio de las alturas del spline es: {average_height:.2f} metros")
 
-
-
-
 #----------GRAFICA----------
 
 # Generar la gráfica de la trayectoria suavizada
-x_new = np.linspace(0, 300, 500)
+x_new = np.linspace(0, 346, 500)
 y_spl = cs(x_new)
 
 # Graficar la trayectoria del spline cúbico
