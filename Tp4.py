@@ -1,8 +1,7 @@
 import numpy as np
-
-import matplotlib.pyplot as plt
-
+from scipy.integrate import simpson
 from scipy.interpolate import CubicSpline
+import matplotlib.pyplot as plt
 
 from deap import base, creator, tools, algorithms
 
@@ -107,6 +106,10 @@ y_newton = polinomio_newton(x_new, distanciaX, tabla_divididas)
 import matplotlib.pyplot as plt
 
 plt.plot(x_new, y_newton, 'y--', label='Trayectoria interpolada (Newton)', linewidth=2)
+plt.plot(distanciaX, alturaY, 'ro', label='Puntos críticos', markersize=8)
+# Anotaciones en los puntos críticos
+for i in range(len(distanciaX)):
+    plt.text(distanciaX[i], alturaY[i] + 1, f"({distanciaX[i]}, {alturaY[i]})", fontsize=10, ha='center')
 
 # Configuraciones de la gráfica
 plt.title('Diseño de la montaña rusa con Polinomio de Interpolación de Newton')
@@ -114,7 +117,7 @@ plt.xlabel('Distancia (m)')
 plt.ylabel('Altura (m)')
 plt.legend()
 plt.grid(True)
-
+plt.show()
 
 #Opcion 2 Splaine
 
@@ -139,6 +142,48 @@ plt.legend()
 plt.grid(True)
 
 # Mostrar la gráfica
+plt.show()
+
+#---------------------------------------------1)D---------------------------------------------
+#Comparación de Suavidad: Método de Energía
+# Cálculo de la segunda derivada para ambas curvas
+# Derivada de la curva de Newton (segunda derivada numérica)
+dydx_newton = np.gradient(y_newton, x_new)
+d2ydx2_newton = np.gradient(dydx_newton, x_new)
+
+# Derivada de la curva Spline (usamos la función spline para derivar)
+d2ydx2_spline = cs(x_new, 2)
+
+# Cálculo de la energía para ambas curvas
+# Usamos el espaciado entre puntos (dx) en lugar de pasar x_new directamente
+dx = x_new[1] - x_new[0]  
+
+energy_newton = simpson(d2ydx2_newton**2, dx=dx)
+energy_spline = simpson(d2ydx2_spline**2, dx=dx)
+
+print(f"Energía de la curva de Newton: {energy_newton}")
+print(f"Energía de la curva Spline: {energy_spline}")
+
+# Comparación final
+if energy_newton > energy_spline:
+    print("La curva Spline es más suave que la de Newton.")
+else:
+    print("La curva de Newton es más suave que la Spline.")
+plt.plot(x_new, y_newton, 'y--', label='Trayectoria interpolada (Newton)', linewidth=2)
+plt.plot(x_new, y_spl, 'b--', label='Trayectoria suavizada (Spline cúbico)', linewidth=2)
+plt.plot(distanciaX, alturaY, 'ro', label='Puntos críticos', markersize=8)
+# Anotaciones en los puntos críticos
+for i in range(len(distanciaX)):
+    plt.text(distanciaX[i], alturaY[i] + 1, f"({distanciaX[i]}, {alturaY[i]})", fontsize=10, ha='center')
+
+# Configuraciones de la gráfica
+plt.title('Comparacion de los diseños de las montañas rusas con Polinomio de Interpolación de Newton y Spline Cúbico')
+plt.xlabel('Distancia (m)')
+plt.ylabel('Altura (m)')
+plt.legend()
+plt.grid(True)
+
+
 plt.show()
 
 #---------------------------------------------1)E---------------------------------------------
@@ -323,4 +368,143 @@ plt.grid(True)
 
 # Mostrar la gráfica
 plt.show()
+#-------------------------------------------- 2)B ------------------------------------------------
 
+# Cálculo de la curvatura del spline cúbico
+curvatura_spline = cs.derivative(nu=2)
+
+# Función para calcular el promedio ponderado de las alturas usando la curvatura como peso
+def weighted_average_heights(supports, spline, curvatura):
+    alturas = spline(supports)
+    curvaturas = np.abs(curvatura(supports))  # Obtener las curvaturas absolutas en los puntos de soporte
+    weighted_sum = np.sum(alturas * curvaturas)  # Sumar las alturas ponderadas por las curvaturas
+    total_weight = np.sum(curvaturas)  # Sumar todas las curvaturas (los pesos)
+    
+    return weighted_sum / total_weight  # Calcular el promedio ponderado
+
+# Modificar la función de evaluación para que use el promedio ponderado de alturas
+def eval_supports_weighted(individual):
+    return (weighted_average_heights(individual, cs, curvatura_spline),)
+
+# Registrar la nueva función de evaluación en el toolbox
+toolbox.register("evaluate", eval_supports_weighted)
+
+# Ejecutar la optimización genética con la nueva función de evaluación
+best_supports_weighted = genetic_optimization()
+
+# Calcular la suma de las alturas ponderadas y el promedio del mejor individuo
+heights_weighted = cs(best_supports_weighted)
+curvature_weighted = np.abs(curvatura_spline(best_supports_weighted))
+
+# Imprimir resultados finales
+weighted_sum_heights = np.sum(heights_weighted * curvature_weighted)
+print(f"Cantidad de material total ponderado para el mejor individuo: {weighted_sum_heights:.2f}")
+cantidad_material=np.sum(best_supports_weighted)
+print(f"Cantidad de material total para el mejor individuo: {cantidad_material:.2f}")
+
+weighted_average_heights_result = np.mean(heights_weighted * curvature_weighted / np.sum(curvature_weighted))
+print(f"Sumatoria promedio ponderada de las alturas del mejor individuo: {weighted_average_heights_result:.2f}")
+
+#---------- GRAFICA DEL MEJOR RESULTADO PONDERADO ----------
+# Generar la gráfica de la trayectoria suavizada
+x_new = np.linspace(0, 346, 500)
+y_spl = cs(x_new)
+
+# Graficar la trayectoria del spline cúbico
+plt.plot(x_new, y_spl, 'b-', label='Trayectoria suavizada (Spline cúbico)', linewidth=2)
+
+# Graficar los soportes como cuadrados grises
+plt.plot(best_supports_weighted, cs(best_supports_weighted), 's', color='gray', label='Soportes optimizados (Ponderado)', markersize=8)
+
+# Añadir líneas punteadas desde y=10 hasta cada soporte
+for soporte in best_supports_weighted:
+    plt.plot([soporte, soporte], [10, cs(soporte)], 'k--')  # Línea punteada entre y=10 y la altura del soporte
+
+# Configuraciones de la gráfica
+plt.title('Optimización de Soportes Ponderada por Curvatura de la Montaña Rusa')
+plt.xlabel('Distancia (m)')
+plt.ylabel('Altura (m)')
+plt.legend()
+plt.grid(True)
+
+# Mostrar la gráfica
+plt.show()
+
+
+# Función para calcular la segunda derivada del polinomio de Newton en los puntos de soporte
+def segunda_derivada_newton(x, x_data, dd):
+    n = len(x_data)
+    resultado = np.zeros_like(x, dtype=float)
+    
+    # Calcular la segunda derivada (esencialmente buscando el término de orden 2 en adelante)
+    for i in range(2, n):
+        termino = dd[0, i]  # Término de la tabla de diferencias divididas
+        for j in range(i):
+            termino *= (x - x_data[j])  # Multiplicando por los factores (x - x_data[j])
+        resultado += termino
+
+    return resultado
+    
+# Crear tabla de diferencias divididas para el polinomio de Newton
+tabla_divididas = diferencias_divididas(distanciaX, alturaY)
+
+# Función para calcular el promedio ponderado de las alturas usando la curvatura como peso para Newton
+def weighted_average_heights_newton(supports, x_data, dd):
+    alturas = np.abs(polinomio_newton(supports, x_data, dd))  # Alturas del polinomio de Newton en los puntos de soporte
+    curvaturas = np.abs(segunda_derivada_newton(supports, x_data, dd))  # Curvaturas absolutas (segunda derivada)
+    weighted_sum = np.abs(np.sum(alturas * curvaturas))  # Sumar las alturas ponderadas por las curvaturas
+    total_weight = np.sum(curvaturas)  # Sumar todas las curvaturas (los pesos)
+    
+    return weighted_sum / total_weight  # Calcular el promedio ponderado
+
+
+# Modificar la función de evaluación para usar el promedio ponderado de alturas con el polinomio de Newton
+def eval_supports_weighted_newton(individual):
+    return (weighted_average_heights_newton(individual, distanciaX, tabla_divididas),)
+
+# Registrar la nueva función de evaluación en el toolbox para Newton
+toolbox.register("evaluate", eval_supports_weighted_newton)
+
+# Ejecutar la optimización genética con la nueva función de evaluación basada en Newton
+best_supports_weighted_newton = genetic_optimization()
+
+
+best_supports_weighted_newton = np.clip(best_supports_weighted_newton, distanciaX[0], distanciaX[-1])
+
+# Calcular la suma de las alturas ponderadas y el promedio del mejor individuo con Newton
+heights_weighted_newton = np.abs(polinomio_newton(best_supports_weighted_newton, distanciaX, tabla_divididas))
+curvature_weighted_newton = np.abs(segunda_derivada_newton(best_supports_weighted_newton, distanciaX, tabla_divididas))
+
+# Imprimir resultados finales para Newton
+weighted_sum_heights_newton = np.sum(heights_weighted_newton * curvature_weighted_newton)
+print(f"Cantidad de material total ponderado para el mejor individuo (Newton): {weighted_sum_heights_newton:.2f}")
+cantidad_material=np.sum(best_supports_weighted_newton)
+print(f"Cantidad de material total para el mejor individuo (Newton): {cantidad_material:.2f}")
+
+weighted_average_heights_result_newton = np.mean(heights_weighted_newton * curvature_weighted_newton / np.sum(curvature_weighted_newton))
+print(f"Sumatoria promedio ponderada de las alturas del mejor individuo (Newton): {weighted_average_heights_result_newton:.2f}")
+
+#---------- GRAFICA DEL MEJOR RESULTADO PONDERADO (NEWTON) ----------
+# Generar la gráfica de la trayectoria del polinomio de Newton
+x_new = np.linspace(0, 303.3, 500)
+y_newton = polinomio_newton(x_new, distanciaX, tabla_divididas)
+
+plt.plot(x_new, y_newton, 'g-', label='Trayectoria interpolada (Newton)', linewidth=2)
+# Graficar los soportes como cuadrados grises
+plt.plot(best_supports_weighted_newton, polinomio_newton(best_supports_weighted_newton, distanciaX, tabla_divididas), 's', color='gray', label='Soportes optimizados (Newton)', markersize=8)
+
+# Añadir líneas punteadas desde y=10 hasta cada soporte
+for soporte in best_supports_weighted_newton:
+    plt.plot([soporte, soporte], [10, polinomio_newton(soporte, distanciaX, tabla_divididas)], 'k--')  # Línea punteada entre y=10 y la altura del soporte
+
+
+
+# Configuraciones de la gráfica
+plt.title('Optimización de Soportes Ponderada por Curvatura (Newton)')
+plt.xlabel('Distancia (m)')
+plt.ylabel('Altura (m)')
+plt.legend()
+plt.grid(True)
+
+# Mostrar la gráfica
+plt.show()
