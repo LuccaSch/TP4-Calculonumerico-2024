@@ -200,6 +200,14 @@ print(f"Altura a 225 metros con el polinomio de Newton: {altura_225_newton}")
 print(f"Altura a 75 metros con el spline cúbico: {altura_75_spline}")
 print(f"Altura a 225 metros con el spline cúbico: {altura_225_spline}")
 
+# Calcular el promedio de las alturas para la curva de Newton
+promedio_newton = np.mean(y_newton)
+print(f"Promedio de las alturas para Newton: {promedio_newton}")
+
+# Calcular el promedio de las alturas para la curva del spline
+promedio_spline = np.mean(y_spl)
+print(f"Promedio de las alturas para el Spline: {promedio_spline}")
+
 
 #-------------------------------------------- 2)A ------------------------------------------------
 # Parámetros del problema
