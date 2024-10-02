@@ -377,7 +377,6 @@ plt.grid(True)
 # Mostrar la gráfica
 plt.show()
 #-------------------------------------------- 2)B ------------------------------------------------
-
 # Cálculo de la curvatura del spline cúbico
 curvatura_spline = cs.derivative(nu=2)
 
@@ -476,8 +475,8 @@ toolbox.register("evaluate", eval_supports_weighted_newton)
 # Ejecutar la optimización genética con la nueva función de evaluación basada en Newton
 best_supports_weighted_newton = genetic_optimization()
 
-
-best_supports_weighted_newton = np.clip(best_supports_weighted_newton, distanciaX[0], distanciaX[-1])
+# Colocamos el último soporte en el valor de 0
+best_supports_weighted_newton = np.append(best_supports_weighted_newton, 0)
 
 # Calcular la suma de las alturas ponderadas y el promedio del mejor individuo con Newton
 heights_weighted_newton = np.abs(polinomio_newton(best_supports_weighted_newton, distanciaX, tabla_divididas))
@@ -494,7 +493,7 @@ print(f"Sumatoria promedio ponderada de las alturas del mejor individuo (Newton)
 
 #---------- GRAFICA DEL MEJOR RESULTADO PONDERADO (NEWTON) ----------
 # Generar la gráfica de la trayectoria del polinomio de Newton
-x_new = np.linspace(0, 303.3, 500)
+x_new = np.linspace(0, 303.428775, 500)
 y_newton = polinomio_newton(x_new, distanciaX, tabla_divididas)
 
 plt.plot(x_new, y_newton, 'g-', label='Trayectoria interpolada (Newton)', linewidth=2)
@@ -504,7 +503,6 @@ plt.plot(best_supports_weighted_newton, polinomio_newton(best_supports_weighted_
 # Añadir líneas punteadas desde y=10 hasta cada soporte
 for soporte in best_supports_weighted_newton:
     plt.plot([soporte, soporte], [10, polinomio_newton(soporte, distanciaX, tabla_divididas)], 'k--')  # Línea punteada entre y=10 y la altura del soporte
-
 
 
 # Configuraciones de la gráfica
